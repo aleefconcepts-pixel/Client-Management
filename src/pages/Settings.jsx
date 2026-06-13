@@ -84,7 +84,7 @@ export default function Settings() {
         </div>
 
         {/* SECTION 2 - DATA MANAGEMENT */}
-        <div className="card danger-zone" style={{ maxWidth: '600px', width: '100%', background: 'rgba(239, 68, 68, 0.02)' }}>
+        {/* <div className="card danger-zone" style={{ maxWidth: '600px', width: '100%', background: 'rgba(239, 68, 68, 0.02)' }}>
           <h2 className="danger-zone-title" style={{ fontFamily: 'Space Grotesk' }}>Danger Zone</h2>
           <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>
             Actions here reset or delete the local storage database. Ensure you want to overwrite your data before proceeding.
@@ -98,7 +98,7 @@ export default function Settings() {
               Clear All Data
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

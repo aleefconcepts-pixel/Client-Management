@@ -1194,3 +1194,45 @@ tr:hover td {
     padding: 1rem 1.25rem;
   }
 }
+
+/* Export Panel styling */
+.export-card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-main);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.export-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+.export-panel-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+@media (min-width: 769px) {
+  .export-panel-section:first-child {
+    border-right: 1px solid var(--border);
+    padding-right: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .export-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .export-panel-section:first-child {
+    border-right: none;
+    padding-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1.5rem;
+  }
+}
+

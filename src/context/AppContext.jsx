@@ -15,93 +15,11 @@ import {
 // Define context
 const AppContext = createContext();
 
-// Seed data
+// Initial Settings
 const initialSettings = {
   agencyName: "Aleef Concepts",
-  currentMonth: "2025-06" // YYYY-MM
+  currentMonth: new Date().toISOString().substring(0, 7) // YYYY-MM
 };
-
-const seedClients = [
-  {
-    id: "c1",
-    name: "Zara Home MENA",
-    niche: "Fashion",
-    manager: "Sara K",
-    color: "#00E5A0",
-    notes: "Seasonal campaign ongoing",
-    deliverables: [
-      { id: "d1-1", title: "4 Reels Production", status: "delivered", contentType: "Reel" },
-      { id: "d1-2", title: "8 Static Grid Posts", status: "delivered", contentType: "Poster" },
-      { id: "d1-3", title: "TikTok Trends Research", status: "delivered", contentType: "General" },
-      { id: "d1-4", title: "Newsletter Copywriting", status: "delivered", contentType: "General" },
-      { id: "d1-5", title: "Paid Ads Assets Set A", status: "delivered", contentType: "Poster" },
-      { id: "d1-6", title: "SEO Keyword Audit", status: "delivered", contentType: "General" },
-      { id: "d1-7", title: "Monthly Campaign Budget", status: "delivered", contentType: "General" },
-      { id: "d1-8", title: "Product Grid Layout Design", status: "delivered", contentType: "Carousel" },
-      { id: "d1-9", title: "Influencer Outreach Planning", status: "pending", contentType: "General" },
-      { id: "d1-10", title: "PR Press Release Distribution", status: "pending", contentType: "General" },
-      { id: "d1-11", title: "Competitor Visual Audit Report", status: "pending", contentType: "Carousel" },
-      { id: "d1-12", title: "Q3 Strategy Presentation", status: "overdue", contentType: "General" }
-    ]
-  },
-  {
-    id: "c2",
-    name: "BrewLab Coffee",
-    niche: "F&B",
-    manager: "Omar R",
-    color: "#F59E0B",
-    notes: "Cafe launch strategy & influencer invites",
-    deliverables: [
-      { id: "d2-1", title: "Brand Identity Design", status: "delivered", contentType: "General" },
-      { id: "d2-2", title: "Packaging Box Layout", status: "delivered", contentType: "Poster" },
-      { id: "d2-3", title: "Coffee Bag Labels", status: "delivered", contentType: "Poster" },
-      { id: "d2-4", title: "Menu Board Design", status: "delivered", contentType: "Poster" },
-      { id: "d2-5", title: "Grand Opening PR Pitch", status: "delivered", contentType: "General" },
-      { id: "d2-6", title: "Instagram Launch Reels", status: "delivered", contentType: "Reel" },
-      { id: "d2-7", title: "Local F&B Influencer List", status: "delivered", contentType: "General" },
-      { id: "d2-8", title: "Website Landing Page Draft", status: "delivered", contentType: "General" }
-    ]
-  },
-  {
-    id: "c3",
-    name: "NexGen SaaS",
-    niche: "Tech",
-    manager: "Lena M",
-    color: "#6EE7B7",
-    notes: "Product Hunt launch items",
-    deliverables: [
-      { id: "d3-1", title: "Product Hunt Asset Kit", status: "delivered", contentType: "General" },
-      { id: "d3-2", title: "Landing Page Copywriting", status: "delivered", contentType: "General" },
-      { id: "d3-3", title: "Launch Day Email Flow", status: "delivered", contentType: "General" },
-      { id: "d3-4", title: "Social Media Banner Suite", status: "delivered", contentType: "Poster" },
-      { id: "d3-5", title: "Pitch Video Subtitles & Edit", status: "in-progress", contentType: "Reel" },
-      { id: "d3-6", title: "Twitter Launch Thread Draft", status: "in-progress", contentType: "General" },
-      { id: "d3-7", title: "Paid LinkedIn Ad Launch", status: "in-progress", contentType: "General" },
-      { id: "d3-8", title: "Founder Post Ghostwriting", status: "in-progress", contentType: "General" },
-      { id: "d3-9", title: "QA Testing Log Check", status: "pending", contentType: "General" },
-      { id: "d3-10", title: "Beta User Feedback Form", status: "pending", contentType: "General" }
-    ]
-  }
-];
-
-const seedEvents = [
-  { id: "e1", title: "Zara Campaign Pitch", date: "2025-06-05", client: "c1", color: "#EF4444", contentType: "Reel", status: "delivered" },
-  { id: "e2", title: "BrewLab Cafe Launch", date: "2025-06-15", client: "c2", color: "#3B82F6", contentType: "Poster", status: "delivered" },
-  { id: "e3", title: "NexGen Product Hunt", date: "2025-06-20", client: "c3", color: "#10B981", contentType: "Carousel", status: "pending" },
-  { id: "e4", title: "Monthly Progress Review", date: "2025-06-30", client: "", color: "#00E5A0", contentType: "General", status: "in-progress" },
-  
-  // Also add duplicate events for June 2026 so that today's view displays beautifully
-  { id: "e5", title: "Zara Campaign Pitch", date: "2026-06-05", client: "c1", color: "#EF4444", contentType: "Reel", status: "delivered" },
-  { id: "e6", title: "BrewLab Cafe Launch", date: "2026-06-15", client: "c2", color: "#3B82F6", contentType: "Poster", status: "delivered" },
-  { id: "e7", title: "NexGen Product Hunt", date: "2026-06-20", client: "c3", color: "#10B981", contentType: "Carousel", status: "in-progress" },
-  { id: "e8", title: "Monthly Progress Review", date: "2026-06-30", client: "", color: "#00E5A0", contentType: "General", status: "pending" },
-
-  // Custom content type events
-  { id: "e9", title: "Zara TikTok Brand Video", date: "2025-06-10", client: "c1", color: "#EC4899", contentType: "TikTok", status: "delivered" },
-  { id: "e10", title: "BrewLab Weekly Newsletter", date: "2025-06-18", client: "c2", color: "#8B5CF6", contentType: "Newsletter", status: "delivered" },
-  { id: "e11", title: "Zara TikTok Brand Video", date: "2026-06-10", client: "c1", color: "#EC4899", contentType: "TikTok", status: "delivered" },
-  { id: "e12", title: "BrewLab Weekly Newsletter", date: "2026-06-18", client: "c2", color: "#8B5CF6", contentType: "Newsletter", status: "delivered" }
-];
 
 
 const initialState = {
@@ -267,28 +185,16 @@ export const AppProvider = ({ children }) => {
       }
     });
 
-    // Check and seed if Firestore collections are empty
+    // Check and seed if global settings document is empty
     const checkAndSeed = async () => {
       try {
-        const clientsSnap = await getDocs(collection(db, "clients"));
-        const eventsSnap = await getDocs(collection(db, "events"));
-        
-        if (clientsSnap.empty && eventsSnap.empty) {
-          console.log("Firestore collections are empty. Seeding database with demo data...");
-          const batch = writeBatch(db);
-          
-          seedClients.forEach(client => {
-            batch.set(doc(db, "clients", client.id), client);
-          });
-          seedEvents.forEach(event => {
-            batch.set(doc(db, "events", event.id), event);
-          });
-          batch.set(doc(db, "settings", "global"), initialSettings);
-          
-          await batch.commit();
+        const settingsSnap = await getDocs(collection(db, "settings"));
+        if (settingsSnap.empty) {
+          console.log("Global settings document is missing. Initializing settings...");
+          await setDoc(doc(db, "settings", "global"), initialSettings);
         }
       } catch (err) {
-        console.error("Error during Firestore seeding check:", err);
+        console.error("Error during Firestore settings check:", err);
       }
     };
 
@@ -315,16 +221,10 @@ export const AppProvider = ({ children }) => {
         batch.delete(doc(db, "events", d.id));
       });
 
-      seedClients.forEach(client => {
-        batch.set(doc(db, "clients", client.id), client);
-      });
-      seedEvents.forEach(event => {
-        batch.set(doc(db, "events", event.id), event);
-      });
       batch.set(doc(db, "settings", "global"), initialSettings);
       
       await batch.commit();
-      showToast("Data reset to demo clients ✓", "success");
+      showToast("All data cleared and settings reset ✓", "success");
     } catch (err) {
       console.error("Error resetting data in Firestore:", err);
       showToast("Failed to reset data", "error");

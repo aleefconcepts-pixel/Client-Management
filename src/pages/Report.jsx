@@ -7,7 +7,7 @@ export default function Report() {
   const { clients, events, settings } = state;
 
   // Local report month state, initialized from settings
-  const [reportMonth, setReportMonth] = useState(settings.currentMonth || '2025-06');
+  const [reportMonth, setReportMonth] = useState(settings.currentMonth || new Date().toISOString().substring(0, 7));
   
   // Client/Company filter state
   const [filterClient, setFilterClient] = useState('All');
@@ -18,7 +18,10 @@ export default function Report() {
 
   useEffect(() => {
     document.title = `${settings.agencyName || 'Aleef Concepts'} — Monthly Report`;
-  }, [settings.agencyName]);
+    if (settings.currentMonth) {
+      setReportMonth(settings.currentMonth);
+    }
+  }, [settings]);
 
   // Helper to format month picker value to "Month Name YYYY"
   const getFormattedMonthName = (monthStr) => {

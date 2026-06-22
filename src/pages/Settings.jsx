@@ -6,13 +6,15 @@ export default function Settings() {
   const { state, dispatch, showToast } = useApp();
   const { settings } = state;
 
-  useEffect(() => {
-    document.title = `${settings.agencyName || 'Aleef Concepts'} — Settings`;
-  }, [settings.agencyName]);
-
   // Form states
   const [agencyName, setAgencyName] = useState(settings.agencyName || 'Aleef Concepts');
-  const [currentMonth, setCurrentMonth] = useState(settings.currentMonth || '2025-06');
+  const [currentMonth, setCurrentMonth] = useState(settings.currentMonth || new Date().toISOString().substring(0, 7));
+
+  useEffect(() => {
+    document.title = `${settings.agencyName || 'Aleef Concepts'} — Settings`;
+    if (settings.agencyName) setAgencyName(settings.agencyName);
+    if (settings.currentMonth) setCurrentMonth(settings.currentMonth);
+  }, [settings]);
 
   // Handle saving configurations
   const handleSaveSettings = (e) => {
@@ -26,13 +28,6 @@ export default function Settings() {
       payload: { agencyName: agencyName.trim(), currentMonth }
     });
     showToast('Settings saved ✓', 'success');
-  };
-
-  // Reset to default seed demo data
-  const handleResetDemoData = () => {
-    if (window.confirm('Reset all data to demo clients? This will reload the dashboard.')) {
-      dispatch({ type: 'RESET_DATA' });
-    }
   };
 
   // Clear all data (empty state)
@@ -83,22 +78,7 @@ export default function Settings() {
           </form>
         </div>
 
-        {/* SECTION 2 - DATA MANAGEMENT */}
-        {/* <div className="card danger-zone" style={{ maxWidth: '600px', width: '100%', background: 'rgba(239, 68, 68, 0.02)' }}>
-          <h2 className="danger-zone-title" style={{ fontFamily: 'Space Grotesk' }}>Danger Zone</h2>
-          <p className="text-muted" style={{ fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-            Actions here reset or delete the local storage database. Ensure you want to overwrite your data before proceeding.
-          </p>
-          
-          <div className="danger-zone-actions">
-            <button className="btn btn-warning" onClick={handleResetDemoData}>
-              Reset to Demo Data
-            </button>
-            <button className="btn btn-danger" onClick={handleClearAllData}>
-              Clear All Data
-            </button>
-          </div>
-        </div> */}
+       
       </div>
     </div>
   );

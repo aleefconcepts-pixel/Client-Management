@@ -7,7 +7,7 @@ export default function DonutChart() {
   const canvasRef = useRef(null);
 
   // Compute status totals from calendar events for the active month
-  const activeMonth = state.settings?.currentMonth || '2025-06';
+  const activeMonth = state.settings?.currentMonth || new Date().toISOString().substring(0, 7);
   const monthEvents = (state.events || []).filter(e => e.date && e.date.substring(0, 7) === activeMonth);
 
   let delivered = 0;

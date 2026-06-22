@@ -48,7 +48,7 @@ export default function BarChart() {
         return;
       }
 
-      const activeMonth = state.settings?.currentMonth || '2025-06';
+      const activeMonth = state.settings?.currentMonth || new Date().toISOString().substring(0, 7);
       const monthEvents = (state.events || []).filter(e => e.date && e.date.substring(0, 7) === activeMonth);
 
       clients.forEach((client, idx) => {

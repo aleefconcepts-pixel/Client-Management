@@ -137,7 +137,7 @@ export default function Clients() {
             </thead>
             <tbody>
               {clients.map(client => {
-                const activeMonth = settings.currentMonth || '2025-06';
+                const activeMonth = settings.currentMonth || new Date().toISOString().substring(0, 7);
                 const clientEvents = (events || []).filter(e => e.client === client.id && e.date && e.date.substring(0, 7) === activeMonth);
 
                 const totalD = clientEvents.length;

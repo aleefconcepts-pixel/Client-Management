@@ -20,7 +20,7 @@ export default function Dashboard() {
   };
 
   // Compute stats based on the active month's calendar events
-  const activeMonth = settings.currentMonth || '2025-06';
+  const activeMonth = settings.currentMonth || new Date().toISOString().substring(0, 7);
   const monthEvents = (events || []).filter(e => e.date && e.date.substring(0, 7) === activeMonth);
 
   const totalClients = clients.length;

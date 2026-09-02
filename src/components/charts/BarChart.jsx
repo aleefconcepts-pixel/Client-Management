@@ -1,9 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 
-export default function BarChart() {
+export default function BarChart({ clients: propClients, events: propEvents }) {
   const { state } = useApp();
-  const clients = state.clients || [];
+  const clients = propClients !== undefined ? propClients : (state.clients || []);
+  const events = propEvents !== undefined ? propEvents : (state.events || []);
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -49,7 +50,7 @@ export default function BarChart() {
       }
 
       const activeMonth = state.settings?.currentMonth || new Date().toISOString().substring(0, 7);
-      const monthEvents = (state.events || []).filter(e => e.date && e.date.substring(0, 7) === activeMonth);
+      const monthEvents = (events || []).filter(e => e.date && e.date.substring(0, 7) === activeMonth);
 
       clients.forEach((client, idx) => {
         const clientEvents = monthEvents.filter(e => e.client === client.id);
@@ -115,7 +116,7 @@ export default function BarChart() {
       window.removeEventListener('resize', draw);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [clients, state.events, state.settings?.currentMonth]);
+  }, [clients, events, state.settings?.currentMonth]);
 
   return (
     <div className="canvas-container" style={{ minHeight: `${Math.max(180, clients.length * 56 + 20)}px` }}>

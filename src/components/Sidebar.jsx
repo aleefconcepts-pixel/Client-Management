@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({ mobileOpen, setMobileOpen }) {
   const { state, dispatch } = useApp();
+  const { currentUser, isAdmin, isMember, logout, getAvatarGradient, getInitials } = useAuth();
   const [isExpanded, setIsExpanded] = useState(true);
 
-  const navItems = [
+  const allNavItems = [
     {
       id: "dashboard",
       label: "Dashboard",
+      adminOnly: false,
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="3" width="7" height="9"></rect>
@@ -21,6 +24,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
     {
       id: "clients",
       label: "Clients",
+      adminOnly: true, // Only visible to Admin
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -33,6 +37,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
     {
       id: "report",
       label: "Monthly Report",
+      adminOnly: false,
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="18" y1="20" x2="18" y2="10"></line>
@@ -44,6 +49,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
     {
       id: "calendar",
       label: "Calendar",
+      adminOnly: false,
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -56,6 +62,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
     {
       id: "settings",
       label: "Settings",
+      adminOnly: true, // Only visible to Admin
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="3"></circle>
@@ -64,6 +71,12 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
       )
     }
   ];
+
+  // Logged-in members only see Dashboard, Monthly Report, and Calendar (3 items)
+  // Admin sees all 5 items
+  const navItems = isMember
+    ? allNavItems.filter(item => !item.adminOnly)
+    : allNavItems;
 
   const handleNavClick = (id) => {
     dispatch({ type: 'SET_NAV', payload: id });
@@ -75,7 +88,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
       <div className="sidebar-header">
         <div className="logo-container">
           <div className="logo-monogram">AC</div>
-          <span className="logo-text">Aleef Concepts</span>
+          <span className="logo-text">{state.settings.agencyName || 'Aleef Concepts'}</span>
         </div>
         <button 
           className="toggle-btn" 
@@ -97,6 +110,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
         </button>
       </div>
 
+      {/* NAVIGATION ITEMS */}
       <nav className="sidebar-nav">
         {navItems.map((item) => (
           <div
@@ -117,9 +131,42 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
         ))}
       </nav>
 
-      <div className="sidebar-footer">
-        <span>v1.0</span>
-      </div>
+      {/* USER PROFILE & LOGOUT FOOTER */}
+      {currentUser && (
+        <div className="sidebar-user-footer">
+          <div
+            className="sidebar-user-avatar"
+            style={{
+              background: isAdmin
+                ? 'linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)'
+                : getAvatarGradient(currentUser.name)
+            }}
+            title={currentUser.name}
+          >
+            {isAdmin ? '🛡️' : getInitials(currentUser.name)}
+          </div>
+          <div className="sidebar-user-info">
+            <span className="sidebar-user-name" title={currentUser.name}>
+              {currentUser.name}
+            </span>
+            <span className="sidebar-user-role">
+              {isAdmin ? 'Admin' : 'Manager'}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="sidebar-logout-btn"
+            onClick={logout}
+            title="Switch User / Logout"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </button>
+        </div>
+      )}
     </aside>
   );
 }

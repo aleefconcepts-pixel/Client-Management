@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from './context/AppContext';
+import { useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import Toast from './components/Toast';
+import LoginScreen from './components/LoginScreen';
+import UserStatusBar from './components/UserStatusBar';
 
 // Pages
 import Dashboard from './pages/Dashboard';
@@ -11,9 +14,27 @@ import Calendar from './pages/Calendar';
 import Settings from './pages/Settings';
 
 export default function App() {
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
+  const { currentUser, isMember } = useAuth();
   const { activeNav } = state;
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Route guard: if member tries to access clients or settings, redirect to dashboard
+  useEffect(() => {
+    if (isMember && (activeNav === 'clients' || activeNav === 'settings')) {
+      dispatch({ type: 'SET_NAV', payload: 'dashboard' });
+    }
+  }, [isMember, activeNav, dispatch]);
+
+  // If user is not logged in, show Login Screen
+  if (!currentUser) {
+    return (
+      <>
+        <LoginScreen />
+        <Toast />
+      </>
+    );
+  }
 
   // Map activeNav identifier to actual page components
   const renderActivePage = () => {
@@ -21,13 +42,15 @@ export default function App() {
       case 'dashboard':
         return <Dashboard />;
       case 'clients':
-        return <Clients />;
+        // Protected for Admin only
+        return isMember ? <Dashboard /> : <Clients />;
       case 'report':
         return <Report />;
       case 'calendar':
         return <Calendar />;
       case 'settings':
-        return <Settings />;
+        // Protected for Admin only
+        return isMember ? <Dashboard /> : <Settings />;
       default:
         return <Dashboard />;
     }
@@ -84,6 +107,7 @@ export default function App() {
 
       {/* Main content display page */}
       <main className="main-content">
+        <UserStatusBar />
         {renderActivePage()}
       </main>
 

@@ -1,17 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import BarChart from '../components/charts/BarChart';
 import DonutChart from '../components/charts/DonutChart';
 import Modal from '../components/Modal';
+import MemberAssignedBanner from '../components/MemberAssignedBanner';
 import { sanitizeCSVCell, sanitizeTextInput } from '../utils/security';
+import { getFilteredClients, getFilteredEvents } from '../utils/memberHelpers';
 
 export default function Dashboard() {
   const { state, dispatch, showToast } = useApp();
+  const { currentUser, isAdmin, isMember } = useAuth();
   const { clients, events, settings } = state;
 
+  // Scope clients & events based on logged-in role
+  const scopedClients = getFilteredClients(clients, currentUser);
+  const scopedEvents = getFilteredEvents(events, clients, currentUser);
+
   useEffect(() => {
-    document.title = `${settings.agencyName || 'Aleef Concepts'} — Dashboard`;
-  }, [settings.agencyName]);
+    const rolePrefix = isMember ? `${currentUser?.name} | ` : '';
+    document.title = `${rolePrefix}${settings.agencyName || 'Aleef Concepts'} — Dashboard`;
+  }, [settings.agencyName, isMember, currentUser]);
 
   // Helper to format Date to YYYY-MM-DD
   const formatDateString = (d) => {
@@ -88,11 +97,11 @@ export default function Dashboard() {
     return name.substring(0, 2).toUpperCase();
   };
 
-  // Compute monthly stats
+  // Compute monthly stats using scoped data
   const activeMonth = settings.currentMonth || new Date().toISOString().substring(0, 7);
-  const monthEvents = (events || []).filter(e => e.date && e.date.substring(0, 7) === activeMonth);
+  const monthEvents = scopedEvents.filter(e => e.date && e.date.substring(0, 7) === activeMonth);
 
-  const totalClients = clients.length;
+  const totalClients = scopedClients.length;
   const totalDeliverables = monthEvents.length;
   const delivered = monthEvents.filter(d => d.status === 'delivered').length;
   const pending = monthEvents.filter(d => d.status === 'pending').length;
@@ -105,8 +114,8 @@ export default function Dashboard() {
     ...events.map(e => e.deliveredBy).filter(Boolean)
   ])).sort();
 
-  // Selected Day Calculations
-  const dailyEvents = (events || []).filter(e => e.date === selectedDate);
+  // Selected Day Calculations using scoped data
+  const dailyEvents = scopedEvents.filter(e => e.date === selectedDate);
   const dailyDelivered = dailyEvents.filter(d => d.status === 'delivered');
   const dailyPending = dailyEvents.filter(d => d.status === 'pending');
   const dailyInProgress = dailyEvents.filter(d => d.status === 'in-progress');
@@ -319,7 +328,7 @@ export default function Dashboard() {
     const dayStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
     const dateObj = new Date(selectedYear, selectedMonth - 1, dayNum);
     const dayAbbr = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
-    const dayEvents = (events || []).filter(e => e.date === dayStr);
+    const dayEvents = scopedEvents.filter(e => e.date === dayStr);
     const dayDelivered = dayEvents.filter(d => d.status === 'delivered').length;
     const dayPending = dayEvents.filter(d => d.status === 'pending' || d.status === 'in-progress').length;
 
@@ -337,52 +346,21 @@ export default function Dashboard() {
 
   return (
     <div className="page-container">
-      {/* SECTION 1 - Greeting & Month */}
-      <h1 className="title-large">Good morning, {settings.agencyName}</h1>
-      <p className="subtitle">{formatMonthName(settings.currentMonth)}</p>
-
-      {/* SECTION 2 - Monthly Summary Cards */}
-      <div className="summary-grid">
-        <div className="card summary-card">
-          <span className="label">Total Clients</span>
-          <span className="number">{totalClients}</span>
-        </div>
-        <div className="card summary-card">
-          <span className="label">Total Deliverables</span>
-          <span className="number">{totalDeliverables}</span>
-        </div>
-        <div className="card summary-card">
-          <span className="label" style={{ color: 'var(--teal)' }}>Delivered</span>
-          <span className="number" style={{ color: 'var(--teal)' }}>{delivered}</span>
-        </div>
-        <div className="card summary-card">
-          <span className="label" style={{ color: 'var(--warning)' }}>Pending</span>
-          <span className="number" style={{ color: 'var(--warning)' }}>{pending}</span>
-        </div>
-        <div className="card summary-card">
-          <span className="label" style={{ color: 'var(--accent)' }}>In Progress</span>
-          <span className="number" style={{ color: 'var(--accent)' }}>{inProgress}</span>
-        </div>
-        <div className="card summary-card">
-          <span className="label" style={{ color: 'var(--danger)' }}>Overdue</span>
-          <span className="number" style={{ color: 'var(--danger)' }}>{overdue}</span>
+      {/* SECTION 1 - Greeting & Daily Overview Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
+        <div>
+          <h1 className="title-large">{settings.agencyName}</h1>
+          <p className="subtitle">
+            {isMember ? `Your Daily Assigned Deliverables — ${formatReadableDate(selectedDate)}` : `Daily Deliveries & Team Operations — ${formatReadableDate(selectedDate)}`}
+          </p>
         </div>
       </div>
 
-      {/* SECTION 3 - Charts Row */}
-      <div className="charts-grid">
-        <div className="card chart-card">
-          <h2 className="chart-title">Client Work Progress</h2>
-          <BarChart />
-        </div>
-        <div className="card chart-card">
-          <h2 className="chart-title">Deliverables Breakdown</h2>
-          <DonutChart />
-        </div>
-      </div>
+      {/* MEMBER ASSIGNED PORTFOLIO BANNER */}
+      {isMember && <MemberAssignedBanner />}
 
       {/* ========================================================================= */}
-      {/* SECTION 4 - DAILY REPORTS & WHO DELIVERED                                 */}
+      {/* SECTION 2 - DAILY REPORTS & WHO DELIVERED (TOP SECTION)                    */}
       {/* ========================================================================= */}
       <section className="daily-reports-section" id="daily-reports-section">
         {/* HEADER & DATE CONTROLS */}
@@ -397,7 +375,7 @@ export default function Dashboard() {
               </span>
             </div>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-              Track how many items are delivered each day and who delivered them
+              Track daily deliverables, standup progress, and team assignments
             </p>
           </div>
 
@@ -899,6 +877,60 @@ export default function Dashboard() {
               </table>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* SECTION 3 - MONTHLY OVERVIEW & ANALYTICS                                  */}
+      {/* ========================================================================= */}
+      <section className="monthly-overview-section" style={{ marginTop: '2.5rem' }}>
+        <div style={{ marginBottom: '1.25rem' }}>
+          <h2 style={{ fontSize: '1.35rem', margin: 0, fontFamily: 'Space Grotesk' }}>
+            Monthly Performance & Overview
+          </h2>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+            Aggregated deliverables and client metrics for {formatMonthName(settings.currentMonth)}
+          </p>
+        </div>
+
+        {/* Monthly Summary Cards */}
+        <div className="summary-grid">
+          <div className="card summary-card">
+            <span className="label">Total Clients</span>
+            <span className="number">{totalClients}</span>
+          </div>
+          <div className="card summary-card">
+            <span className="label">Total Deliverables</span>
+            <span className="number">{totalDeliverables}</span>
+          </div>
+          <div className="card summary-card">
+            <span className="label" style={{ color: 'var(--teal)' }}>Delivered</span>
+            <span className="number" style={{ color: 'var(--teal)' }}>{delivered}</span>
+          </div>
+          <div className="card summary-card">
+            <span className="label" style={{ color: 'var(--warning)' }}>Pending</span>
+            <span className="number" style={{ color: 'var(--warning)' }}>{pending}</span>
+          </div>
+          <div className="card summary-card">
+            <span className="label" style={{ color: 'var(--accent)' }}>In Progress</span>
+            <span className="number" style={{ color: 'var(--accent)' }}>{inProgress}</span>
+          </div>
+          <div className="card summary-card">
+            <span className="label" style={{ color: 'var(--danger)' }}>Overdue</span>
+            <span className="number" style={{ color: 'var(--danger)' }}>{overdue}</span>
+          </div>
+        </div>
+
+        {/* Monthly Charts Row */}
+        <div className="charts-grid">
+          <div className="card chart-card">
+            <h2 className="chart-title">Client Work Progress</h2>
+            <BarChart clients={scopedClients} events={scopedEvents} />
+          </div>
+          <div className="card chart-card">
+            <h2 className="chart-title">Deliverables Breakdown</h2>
+            <DonutChart events={scopedEvents} />
+          </div>
         </div>
       </section>
 

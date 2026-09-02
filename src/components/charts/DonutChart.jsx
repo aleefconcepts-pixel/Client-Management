@@ -1,14 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 
-export default function DonutChart() {
+export default function DonutChart({ events: propEvents }) {
   const { state } = useApp();
-  const clients = state.clients || [];
+  const events = propEvents !== undefined ? propEvents : (state.events || []);
   const canvasRef = useRef(null);
 
   // Compute status totals from calendar events for the active month
   const activeMonth = state.settings?.currentMonth || new Date().toISOString().substring(0, 7);
-  const monthEvents = (state.events || []).filter(e => e.date && e.date.substring(0, 7) === activeMonth);
+  const monthEvents = (events || []).filter(e => e.date && e.date.substring(0, 7) === activeMonth);
 
   let delivered = 0;
   let pending = 0;

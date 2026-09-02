@@ -1,16 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import Modal from '../components/Modal';
 import html2canvas from 'html2canvas';
 import { sanitizeCSVCell, sanitizeTextInput } from '../utils/security';
+import { getFilteredClients, getFilteredEvents } from '../utils/memberHelpers';
 
 export default function Calendar() {
   const { state, dispatch, showToast } = useApp();
+  const { currentUser, isAdmin, isMember } = useAuth();
   const { clients, events, settings } = state;
 
+  // Scope clients & events based on logged-in role
+  const scopedClients = getFilteredClients(clients, currentUser);
+  const scopedEvents = getFilteredEvents(events, clients, currentUser);
+
   useEffect(() => {
-    document.title = `${settings.agencyName || 'Aleef Concepts'} — Calendar`;
-  }, [settings.agencyName]);
+    const rolePrefix = isMember ? `${currentUser?.name} | ` : '';
+    document.title = `${rolePrefix}${settings.agencyName || 'Aleef Concepts'} — Calendar`;
+  }, [settings.agencyName, isMember, currentUser]);
 
   // Calendar view states
   const [viewMonth, setViewMonth] = useState(new Date());
@@ -41,10 +49,10 @@ export default function Calendar() {
   const [exportClientId, setExportClientId] = useState('');
   const [exportPeriod, setExportPeriod] = useState('current');
 
-  // Apply Client filter if set in AppContext state
+  // Apply Client filter if set in AppContext state from scopedEvents
   const filteredEvents = state.calendarFilterClient 
-    ? events.filter(e => e.client === state.calendarFilterClient)
-    : events;
+    ? scopedEvents.filter(e => e.client === state.calendarFilterClient)
+    : scopedEvents;
 
   // Navigate months
   const handlePrevMonth = () => {
@@ -153,7 +161,7 @@ export default function Calendar() {
     setEventClient(state.calendarFilterClient || ''); // Auto-prefill active client if filter is active
     
     const prefillClient = state.calendarFilterClient ? clients.find(c => c.id === state.calendarFilterClient) : null;
-    setEventDeliveredBy(prefillClient?.manager || '');
+    setEventDeliveredBy(prefillClient?.manager || (isMember ? currentUser?.name || '' : ''));
 
     // Auto-prefill brand color if client is prefilled
     if (prefillClient) {

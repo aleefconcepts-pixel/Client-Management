@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import HealthGauge from '../components/charts/HealthGauge';
+import { getFilteredClients, getFilteredEvents } from '../utils/memberHelpers';
 
 export default function Report() {
   const { state, dispatch } = useApp();
+  const { currentUser, isMember } = useAuth();
   const { clients, events, settings } = state;
 
   // Local report month state, initialized from settings
@@ -16,12 +19,17 @@ export default function Report() {
   const [sortColumn, setSortColumn] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
 
+  // Scope clients & events based on logged-in role
+  const scopedClients = getFilteredClients(clients, currentUser);
+  const scopedEvents = getFilteredEvents(events, clients, currentUser);
+
   useEffect(() => {
-    document.title = `${settings.agencyName || 'Aleef Concepts'} — Monthly Report`;
+    const rolePrefix = isMember ? `${currentUser?.name} | ` : '';
+    document.title = `${rolePrefix}${settings.agencyName || 'Aleef Concepts'} — Monthly Report`;
     if (settings.currentMonth) {
       setReportMonth(settings.currentMonth);
     }
-  }, [settings]);
+  }, [settings, isMember, currentUser]);
 
   // Helper to format month picker value to "Month Name YYYY"
   const getFormattedMonthName = (monthStr) => {
@@ -38,13 +46,13 @@ export default function Report() {
     dispatch({ type: 'UPDATE_SETTINGS', payload: { currentMonth: newMonth } });
   };
 
-  // Filter clients based on selection
+  // Filter clients based on selection from scoped list
   const activeClients = filterClient === 'All'
-    ? clients
-    : clients.filter(c => c.id === filterClient);
+    ? scopedClients
+    : scopedClients.filter(c => c.id === filterClient);
 
-  // Get calendar events for the selected month
-  const monthEvents = (events || []).filter(e => e.date && e.date.substring(0, 7) === reportMonth);
+  // Get calendar events for the selected month from scoped events
+  const monthEvents = scopedEvents.filter(e => e.date && e.date.substring(0, 7) === reportMonth);
 
   // Filter events based on company selection
   const filteredEvents = filterClient === 'All'
@@ -155,8 +163,8 @@ export default function Report() {
               value={filterClient}
               onChange={e => setFilterClient(e.target.value)}
             >
-              <option value="All">All Companies</option>
-              {clients.map(c => (
+              <option value="All">{isMember ? 'All My Clients' : 'All Companies'}</option>
+              {scopedClients.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>

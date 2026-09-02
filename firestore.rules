@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper validation functions
+    function isValidClient(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 200;
+    }
+
+    function isValidEvent(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() <= 300
+        && data.date is string && data.date.size() >= 10;
+    }
+
+    // Clients Collection
+    match /clients/{clientId} {
+      allow read: if true;
+      allow create, update: if isValidClient(request.resource.data);
+      allow delete: if true;
+    }
+
+    // Events Collection
+    match /events/{eventId} {
+      allow read: if true;
+      allow create, update: if isValidEvent(request.resource.data);
+      allow delete: if true;
+    }
+
+    // Global Settings Collection
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if request.resource.data.agencyName is string;
+    }
+  }
+}

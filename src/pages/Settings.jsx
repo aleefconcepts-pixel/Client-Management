@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import { useApp } from "../context/AppContext";
+import { sanitizeTextInput } from "../utils/security";
 
 export default function Settings() {
   const { state, dispatch, showToast } = useApp();
@@ -23,13 +24,14 @@ export default function Settings() {
   // Handle saving configurations
   const handleSaveSettings = (e) => {
     e.preventDefault();
-    if (!agencyName.trim()) {
+    const sanitizedAgency = sanitizeTextInput(agencyName);
+    if (!sanitizedAgency) {
       showToast("Agency Name cannot be blank", "error");
       return;
     }
     dispatch({
       type: "UPDATE_SETTINGS",
-      payload: { agencyName: agencyName.trim(), currentMonth },
+      payload: { agencyName: sanitizedAgency, currentMonth },
     });
     showToast("Settings saved ✓", "success");
   };

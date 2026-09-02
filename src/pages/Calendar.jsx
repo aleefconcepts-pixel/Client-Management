@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import Modal from '../components/Modal';
 import html2canvas from 'html2canvas';
+import { sanitizeCSVCell, sanitizeTextInput } from '../utils/security';
 
 export default function Calendar() {
   const { state, dispatch, showToast } = useApp();
@@ -24,10 +25,17 @@ export default function Calendar() {
   // Form states
   const [eventTitle, setEventTitle] = useState('');
   const [eventClient, setEventClient] = useState('');
+  const [eventDeliveredBy, setEventDeliveredBy] = useState('');
   const [eventColor, setEventColor] = useState('#00E5A0');
   const [eventContentType, setEventContentType] = useState('General');
   const [customContentType, setCustomContentType] = useState('');
   const [eventStatus, setEventStatus] = useState('pending');
+
+  // Known team members/deliverers
+  const knownDeliverers = Array.from(new Set([
+    ...clients.map(c => c.manager).filter(Boolean),
+    ...events.map(e => e.deliveredBy).filter(Boolean)
+  ])).sort();
 
   // Export states
   const [exportClientId, setExportClientId] = useState('');
@@ -96,17 +104,22 @@ export default function Calendar() {
     return cells;
   };
 
-  // Auto-fill color when client is selected in form
+  // Auto-fill color and manager when client is selected in form
   const handleClientChange = (clientId) => {
     setEventClient(clientId);
-    if (eventContentType === 'General') {
-      if (clientId) {
-        const client = clients.find(c => c.id === clientId);
+    if (clientId) {
+      const client = clients.find(c => c.id === clientId);
+      if (client && !eventDeliveredBy && client.manager) {
+        setEventDeliveredBy(client.manager);
+      }
+      if (eventContentType === 'General') {
         if (client && client.color) {
           setEventColor(client.color);
         }
-      } else {
-        setEventColor('#00E5A0'); // Default color if no client
+      }
+    } else {
+      if (eventContentType === 'General') {
+        setEventColor('#00E5A0');
       }
     }
   };
@@ -139,10 +152,12 @@ export default function Calendar() {
     setEventTitle('');
     setEventClient(state.calendarFilterClient || ''); // Auto-prefill active client if filter is active
     
+    const prefillClient = state.calendarFilterClient ? clients.find(c => c.id === state.calendarFilterClient) : null;
+    setEventDeliveredBy(prefillClient?.manager || '');
+
     // Auto-prefill brand color if client is prefilled
-    if (state.calendarFilterClient) {
-      const client = clients.find(c => c.id === state.calendarFilterClient);
-      setEventColor(client ? client.color : '#00E5A0');
+    if (prefillClient) {
+      setEventColor(prefillClient.color || '#00E5A0');
     } else {
       setEventColor('#00E5A0');
     }
@@ -160,6 +175,8 @@ export default function Calendar() {
     setSelectedDate(event.date);
     setEventTitle(event.title);
     setEventClient(event.client || '');
+    const client = clients.find(c => c.id === event.client);
+    setEventDeliveredBy(event.deliveredBy || client?.manager || '');
     setEventColor(event.color || '#00E5A0');
     
     const type = event.contentType || 'General';
@@ -188,22 +205,25 @@ export default function Calendar() {
   // Submit Event Form
   const handleEventFormSubmit = (e) => {
     e.preventDefault();
-    if (!eventTitle.trim()) {
+    const sanitizedTitle = sanitizeTextInput(eventTitle);
+    if (!sanitizedTitle) {
       showToast('Event title is required.', 'error');
       return;
     }
 
-    if (eventContentType === 'Custom' && !customContentType.trim()) {
+    const sanitizedCustomType = sanitizeTextInput(customContentType);
+    if (eventContentType === 'Custom' && !sanitizedCustomType) {
       showToast('Custom content type is required.', 'error');
       return;
     }
 
-    const finalContentType = eventContentType === 'Custom' ? customContentType.trim() : eventContentType;
+    const finalContentType = eventContentType === 'Custom' ? sanitizedCustomType : eventContentType;
 
     const eventData = {
-      title: eventTitle.trim(),
+      title: sanitizedTitle,
       date: selectedDate,
       client: eventClient,
+      deliveredBy: sanitizeTextInput(eventDeliveredBy),
       color: eventColor,
       contentType: finalContentType,
       status: eventStatus
@@ -228,9 +248,11 @@ export default function Calendar() {
 
   const handleToggleDelivered = (event) => {
     const newStatus = event.status === 'delivered' ? 'pending' : 'delivered';
+    const client = clients.find(c => c.id === event.client);
+    const updatedDeliveredBy = event.deliveredBy || (newStatus === 'delivered' ? (client?.manager || '') : event.deliveredBy || '');
     dispatch({
       type: 'UPDATE_EVENT',
-      payload: { ...event, status: newStatus }
+      payload: { ...event, status: newStatus, deliveredBy: updatedDeliveredBy }
     });
     showToast(`Event status updated to ${newStatus} ✓`, 'success');
   };
@@ -324,19 +346,21 @@ export default function Calendar() {
     exportEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
 
     // Generate CSV content
-    const headers = ['Date', 'Title', 'Client/Company', 'Content Type', 'Status'];
+    const headers = ['Date', 'Title', 'Client/Company', 'Content Type', 'Status', 'Delivered By'];
     const csvRows = [headers.join(',')];
 
     for (const event of exportEvents) {
       const client = clients.find(c => c.id === event.client);
       const clientName = client ? client.name : 'General (No Client)';
+      const delivererName = event.deliveredBy || client?.manager || 'Unassigned';
       
       const values = [
-        event.date || '',
-        `"${(event.title || '').replace(/"/g, '""')}"`,
-        `"${clientName.replace(/"/g, '""')}"`,
-        event.contentType || 'General',
-        event.status || 'pending'
+        sanitizeCSVCell(event.date || ''),
+        sanitizeCSVCell(event.title || ''),
+        sanitizeCSVCell(clientName),
+        sanitizeCSVCell(event.contentType || 'General'),
+        sanitizeCSVCell(event.status || 'pending'),
+        sanitizeCSVCell(delivererName)
       ];
       csvRows.push(values.join(','));
     }
@@ -521,8 +545,13 @@ export default function Calendar() {
                               </span>
                             </div>
                             {client && (
-                              <span className="calendar-event-client" style={{ marginTop: '6px', display: 'inline-block', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                                Client: <strong style={{ color: 'var(--text)' }}>{client.name}</strong> ({client.niche} • Mgr: {client.manager})
+                              <span className="calendar-event-client" style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                                <span>Client: <strong style={{ color: 'var(--text)' }}>{client.name}</strong> ({client.niche})</span>
+                                {(event.deliveredBy || client.manager) && (
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'var(--surface-2)', padding: '2px 6px', borderRadius: '4px', color: 'var(--text)' }}>
+                                    👤 {event.deliveredBy || client.manager}
+                                  </span>
+                                )}
                               </span>
                             )}
                           </div>
@@ -682,8 +711,13 @@ export default function Calendar() {
                       </span>
                     </div>
                     {client && (
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                        Client: <strong style={{ color: 'var(--text)' }}>{client.name}</strong> ({client.niche} • Mgr: {client.manager})
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span>Client: <strong style={{ color: 'var(--text)' }}>{client.name}</strong> ({client.niche})</span>
+                        {(event.deliveredBy || client.manager) && (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'var(--surface-1, rgba(255,255,255,0.05))', padding: '2px 6px', borderRadius: '4px', color: 'var(--text)' }}>
+                            👤 Delivered By: <strong style={{ color: 'var(--teal)' }}>{event.deliveredBy || client.manager}</strong>
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -787,6 +821,24 @@ export default function Calendar() {
               <option value="Carousel">Carousel (Green)</option>
               <option value="Custom">Custom...</option>
             </select>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="event-delivered-by">Delivered By / Assignee</label>
+            <input
+              id="event-delivered-by"
+              list="known-deliverers"
+              type="text"
+              className="form-input"
+              value={eventDeliveredBy}
+              onChange={e => setEventDeliveredBy(e.target.value)}
+              placeholder="e.g. Adarsh, Sarah, Video Editor"
+            />
+            <datalist id="known-deliverers">
+              {knownDeliverers.map(d => (
+                <option key={d} value={d} />
+              ))}
+            </datalist>
           </div>
 
           <div className="form-group">

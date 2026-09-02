@@ -333,6 +333,9 @@ export default function Report() {
                             </span>
                             <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
                               Type: <strong style={{ color: eventColor }}>{event.contentType || 'General'}</strong> • Date: {event.date}
+                              {(event.deliveredBy || client.manager) && (
+                                <> • By: <strong style={{ color: 'var(--text)' }}>{event.deliveredBy || client.manager}</strong></>
+                              )}
                             </span>
                           </div>
                           <span className={`badge ${event.status === 'in-progress' ? 'badge-in-progress' : `badge-${event.status || 'pending'}`}`} style={{ fontSize: '9px', padding: '1px 5px' }}>

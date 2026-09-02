@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import Modal from '../components/Modal';
+import { sanitizeTextInput } from '../utils/security';
 
 export default function Clients() {
   const { state, dispatch, showToast } = useApp();
@@ -55,17 +56,18 @@ export default function Clients() {
   const handleFormSubmit = (e) => {
     e.preventDefault();
 
-    if (!name.trim()) {
+    const sanitizedName = sanitizeTextInput(name);
+    if (!sanitizedName) {
       showToast('Client Name is required.', 'error');
       return;
     }
 
     const clientData = {
-      name: name.trim(),
+      name: sanitizedName,
       niche,
-      manager: manager.trim(),
+      manager: sanitizeTextInput(manager),
       color,
-      notes: notes.trim(),
+      notes: sanitizeTextInput(notes),
       deliverables: []
     };
 

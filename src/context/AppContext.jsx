@@ -18,7 +18,8 @@ const AppContext = createContext();
 // Initial Settings
 const initialSettings = {
   agencyName: "Aleef Concepts",
-  currentMonth: new Date().toISOString().substring(0, 7) // YYYY-MM
+  currentMonth: new Date().toISOString().substring(0, 7), // YYYY-MM
+  adminPasscode: "admin123"
 };
 
 
@@ -27,7 +28,8 @@ const initialState = {
   events: [],
   settings: {
     agencyName: "Aleef Concepts",
-    currentMonth: new Date().toISOString().substring(0, 7)
+    currentMonth: new Date().toISOString().substring(0, 7),
+    adminPasscode: "admin123"
   },
   activeNav: "dashboard",
   calendarFilterClient: null,
@@ -144,7 +146,8 @@ function appReducer(state, action) {
         events: [],
         settings: {
           agencyName: "Agency",
-          currentMonth: new Date().toISOString().substring(0, 7)
+          currentMonth: new Date().toISOString().substring(0, 7),
+          adminPasscode: state.settings.adminPasscode || "admin123"
         },
         activeNav: "dashboard",
         toast: { message: "All data cleared", type: "success" }
@@ -246,7 +249,8 @@ export const AppProvider = ({ children }) => {
 
       const defaultSettings = {
         agencyName: "Agency",
-        currentMonth: new Date().toISOString().substring(0, 7)
+        currentMonth: new Date().toISOString().substring(0, 7),
+        adminPasscode: state.settings?.adminPasscode || "admin123"
       };
       batch.set(doc(db, "settings", "global"), defaultSettings);
       

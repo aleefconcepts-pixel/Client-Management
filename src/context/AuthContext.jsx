@@ -73,9 +73,9 @@ export const AuthProvider = ({ children }) => {
 
   // Login as Admin
   const loginAsAdmin = (passcode = '') => {
-    // Admin passcode check (default: admin123)
-    if (passcode.trim() !== DEFAULT_ADMIN_PIN) {
-      showToast('Incorrect Admin passcode. Try: admin123', 'error');
+    const expectedPasscode = (state.settings?.adminPasscode || DEFAULT_ADMIN_PIN).trim();
+    if (passcode.trim() !== expectedPasscode) {
+      showToast('Incorrect Admin passcode. Please try again.', 'error');
       return false;
     }
 
